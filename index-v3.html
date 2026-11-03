@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LCARS Instrument Display</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#000;color:#fff;font-family:Arial,Helvetica,sans-serif}
+#viewport{position:absolute;inset:0;overflow:hidden;background:#000}#stage{position:absolute;width:1280px;height:800px;left:0;top:0;transform-origin:top left;background:#000;overflow:hidden}
+#timeBackground{position:absolute;inset:0;width:1280px;height:800px;display:block}
+.pointer{position:absolute;width:50px;height:50px;object-fit:contain;z-index:5;pointer-events:none;transition:top .75s ease,left .75s ease}
+#readout{position:absolute;left:0;right:0;top:595px;text-align:center;font-size:30px;font-weight:bold;letter-spacing:3px;text-transform:uppercase;z-index:7}
+#startext{position:absolute;left:0;right:0;top:665px;text-align:center;font-size:19px;font-weight:bold;letter-spacing:4px;color:#ddd;z-index:7}
+#stardate{font-size:30px;letter-spacing:3px;margin-top:7px;color:#fff}
+#modeControls{position:absolute;top:15px;left:50%;transform:translateX(-50%);z-index:20;display:flex;gap:8px}
+.modeButton{font-size:15px;font-weight:bold;letter-spacing:1px;padding:9px 18px;border:2px solid #777;background:#080808;color:#ddd;cursor:pointer}
+.modeButton:hover{border-color:#fff;color:#fff}.modeButton.active{background:#b20d0d;border-color:#f33;color:#fff}
+#medical{display:none;position:absolute;inset:0;background:#000}
+.medGauge{position:absolute;top:85px;width:125px;height:535px;color:#fff}
+.medGauge .medTitle{position:absolute;left:0;right:0;bottom:0;text-align:left;font-size:23px;line-height:1.05;font-weight:bold;letter-spacing:1px;color:#e8d77b}
+.medGauge .medSub{position:absolute;left:0;right:0;bottom:49px;font-size:11px;letter-spacing:1px;color:#c8b96c}
+ .gaugeTrack{position:absolute;left:36px;top:0;width:15px;height:455px;border-left:2px solid #f22;border-right:2px solid #f22;background:linear-gradient(to bottom,#f00000 0%,#f00000 30%,#f0dc00 30%,#f0dc00 43%,#00e52b 43%,#00e52b 67%,#f0dc00 67%,#f0dc00 80%,#f00000 80%,#f00000 100%)}
+.gaugeTrack:before{content:"";position:absolute;left:-7px;right:-7px;top:0;bottom:0;background:repeating-linear-gradient(to bottom,transparent 0 8px,rgba(0,0,0,.0) 8px 9px);pointer-events:none}
+.tick{position:absolute;left:-8px;width:20px;height:1px;background:#f33;z-index:2}
+.tick.major{height:3px;width:25px;left:-10px}
+.tick.zone-red{background:#f33}.tick.zone-yellow{background:#f0dc00}.tick.zone-green{background:#00ed32}
+.medNeedle{position:absolute;width:50px;height:50px;left:27px;top:50%;transform:translateY(-25px);z-index:4;pointer-events:none}
+.medNeedle{position:absolute;width:50px;height:50px;left:-3px;top:50%;transform:translateY(-25px);z-index:4;pointer-events:none}
+.medRead{position:absolute;top:0;left:60px;font-size:15px;font-weight:bold;letter-spacing:1px;color:#e8d77b;white-space:nowrap}
+.medScale{position:absolute;left:0;top:0;height:455px;width:28px;font-size:11px;color:#e8d77b}
+.medScale span{position:absolute;left:-25px;transform:translateY(-50%);white-space:nowrap}
+#medGauge0{left:35px}#medGauge1{left:225px}#medGauge2{left:415px}
+#medGauge3{left:740px}#medGauge4{left:930px}#medGauge5{left:1120px}
+#medCenter{position:absolute;left:535px;top:65px;width:210px;height:520px;text-align:center;color:#e8d77b;z-index:2}
+.medLamp{width:72px;height:72px;border-radius:50%;margin:0 auto 8px;background:#f20;box-shadow:0 0 8px #f00;animation:respirationGlow 3s ease-in-out infinite}
+.medLamp.pulse{background:#f0c900;box-shadow:0 0 8px #e8c000;animation:pulseGlow 1s ease-in-out infinite}
+.medCenterLabel{font-size:19px;font-weight:bold;letter-spacing:2px;margin-bottom:34px}
+.medCenterSmall{font-size:12px;line-height:1.8;letter-spacing:1px;color:#c8b96c}
+.medTest{display:inline-block;margin-top:15px;padding:5px 18px;border-radius:18px;background:#b00;color:#fff;font-weight:bold}
+#medicalFooter{position:absolute;left:0;right:0;bottom:25px;text-align:center;font-size:17px;letter-spacing:4px;color:#aaa}
+@keyframes pulseGlow{0%,100%{background:#000;box-shadow:none}50%{background:#f0c900;box-shadow:0 0 12px #e8c000}}
+@keyframes respirationGlow{0%,100%{background:#000;box-shadow:none}50%{background:#f20;box-shadow:0 0 12px #f00}}
+@media(prefers-reduced-motion:reduce){.pointer{transition:none}.medLamp{animation:none}}
+</style>
+</head>
+<body>
+<div id="viewport"><main id="stage">
+  <img id="timeBackground" src="sickbay_background.jpg" alt="Time and date instrument scales">
+<div id="timeMode">
+    <div id="readout"></div>
+    <div id="startext">STAR DATE<div id="stardate"></div></div>
+    <img class="pointer" id="img1" src="needle.png" alt="">
+    <img class="pointer" id="img2" src="needle.png" alt="">
+    <img class="pointer" id="img3" src="needle.png" alt="">
+    <img class="pointer" id="img4" src="needle.png" alt="">
+    <img class="pointer" id="img5" src="needle.png" alt="">
+    <img class="pointer" id="img6" src="needle.png" alt="">
+  </div>
+  <section id="medical" aria-label="Medical bay instruments"><div id="medCenter"><div class="medLamp"></div><div class="medCenterLabel">RESPIRATION</div><div class="medLamp pulse"></div><div class="medCenterLabel">PULSE</div><div class="medCenterSmall">ADJUST<br>FOR NORMAL<br><br>RECORDER<br><span style="color:#4f5">ON</span> &nbsp; <span style="color:#f55">OFF</span></div><div class="medTest">TEST</div></div></section>
+  <div id="medicalFooter">SHIPBOARD MEDICAL MONITORING SYSTEM</div>
+</main></div>
+<script src="imagemove-v3.js"></script>
+</body>
+</html>
